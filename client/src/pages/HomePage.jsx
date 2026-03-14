@@ -12,6 +12,8 @@ const HomePage = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [extractedIntent, setExtractedIntent] = useState(null);
+  const [isAmbiguous, setIsAmbiguous] = useState(false);
   const scrollRef = useRef(null);
   
   const { user } = useSelector(state => state.auth);
@@ -38,6 +40,7 @@ const HomePage = () => {
 
     const userMessage = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
@@ -46,21 +49,47 @@ const HomePage = () => {
       
       // If no active conversation, create one
       if (!currentConvId) {
-        const convRes = await API.post('/conversations', { title: input.substring(0, 30) });
+        const convRes = await API.post('/conversations', { title: currentInput.substring(0, 30) });
         currentConvId = convRes.data.id;
         dispatch(addConversation(convRes.data));
         dispatch(setActiveConversation(currentConvId));
       }
 
-      const res = await API.post('/ai/chat', { 
-        conversationId: currentConvId, 
-        message: input 
-      });
-      
-      // Res contains [userMsgFromDB, assistantMsgFromDB]
-      setMessages(prev => [...prev, res.data[1]]);
+      // 1. Extract Intent
+      const intentRes = await API.post('/ai/extract-intent', { message: currentInput });
+      const intent = intentRes.data;
+
+      if (intent.is_ambiguous) {
+        setMessages(prev => [...prev, { 
+          id: Date.now().toString() + 'ai', 
+          role: 'assistant', 
+          content: intent.clarification_question 
+        }]);
+        setIsAmbiguous(true);
+      } else {
+        setExtractedIntent(intent);
+        setMessages(prev => [...prev, { 
+          id: Date.now().toString() + 'ai', 
+          role: 'assistant', 
+          content: `I've got your plan details: ${intent.duration_days} days in ${intent.destination}. Should I generate your itinerary?` 
+        }]);
+      }
     } catch (err) {
       console.error('Chat error:', err);
+      setMessages(prev => [...prev, { id: Date.now(), role: 'assistant', content: "Sorry, I'm having trouble understanding that. Could you rephrase?" }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateTrip = async () => {
+    if (!extractedIntent || isLoading) return;
+    setIsLoading(true);
+    try {
+      const res = await API.post('/ai/generate-trip', { intent: extractedIntent });
+      window.location.href = `/itinerary/${res.data.id}`;
+    } catch (err) {
+      console.error('Generation error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +165,39 @@ const HomePage = () => {
                 <div className="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce delay-75"></div>
                 <div className="h-1.5 w-1.5 bg-slate-400 rounded-full animate-bounce delay-150"></div>
               </div>
+            </div>
+          )}
+          {extractedIntent && !isLoading && (
+            <div className="flex flex-col items-center gap-4 mt-8 animate-in fade-in slide-in-from-bottom-4">
+               <div className="bg-blue-50 border border-blue-200 p-6 rounded-3xl w-full max-w-md shadow-lg shadow-blue-900/5">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                    <Sparkles size={20} /> Trip Intent Summary
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-white p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Destination</span>
+                      <span className="font-bold text-slate-700">{extractedIntent.destination}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Duration</span>
+                      <span className="font-bold text-slate-700">{extractedIntent.duration_days} Days</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Group Size</span>
+                      <span className="font-bold text-slate-700">{extractedIntent.group_size} People</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Budget</span>
+                      <span className="font-bold text-slate-700">{extractedIntent.budget_total} {extractedIntent.budget_currency}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={handleGenerateTrip}
+                    className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-blue-200 active:scale-[0.98] transition-all"
+                  >
+                    Generate Perfect Itinerary
+                  </button>
+               </div>
             </div>
           )}
         </div>

@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+dotenv.config();
+
 import authRoutes from './routes/authRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
@@ -9,8 +11,6 @@ import exploreRoutes from './routes/exploreRoutes.js';
 import tripRoutes from './routes/tripRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import path from 'path';
-
-dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
