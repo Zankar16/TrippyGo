@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white text-theme-forest antialiased;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.label-small {
+  @apply font-medium uppercase tracking-wider text-[10px];
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white border border-neutral-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply px-5 py-2.5 bg-theme-forest hover:bg-theme-sage text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98];
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-theme-sand rounded-full hover:bg-theme-sage;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}

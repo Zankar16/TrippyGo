@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String
+  creatorMode  Boolean  @default(false)
+  travelDna    Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  trips              Trip[]
+  conversations      Conversation[]
+  documents          Document[]
+  sharedTrips        SharedTrip[]
+  collaborations     TripCollaborator[]
+  votes              Vote[]
+  creatorGuides      CreatorGuide[]
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  destination String
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float    @default(0)
+  tripType    String   @default("Leisure")
+  flagEmoji   String   @default("🌍")
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user             User               @relation(fields: [userId], references: [id])
+  days             ItineraryDay[]
+  collaborators    TripCollaborator[]
+  votes            Vote[]
+  creatorGuides    CreatorGuide[]
+  
+  @@index([userId])
+}
+
+model ItineraryDay {
+  id        String   @id @default(uuid())
+  tripId    String
+  dayNumber Int
+  date      DateTime?
+  theme     String?
+  createdAt DateTime @default(now())
+  
+  trip      Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  items     ItineraryItem[]
+  
+  @@index([tripId])
+}
+
+model ItineraryItem {
+  id            String   @id @default(uuid())
+  dayId         String
+  type          String   // flight hotel activity meal
+  name          String
+  startTime     String?
+  endTime       String?
+  duration      String?
+  price         Float    @default(0)
+  currency      String   @default("USD")
+  location      String?
+  latitude      Float?
+  longitude     Float?
+  notes         String?
+  instaScore    Int?
+  photoTip      String?
+  shootingTime  String?
+  imageUrl      String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  day    ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  votes  Vote[]
+  
+  @@index([dayId])
+}
+
+model Conversation {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String   @default("New Conversation")
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user      User      @relation(fields: [userId], references: [id])
+  messages  Message[]
+  
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String   // user or assistant
+  content        String
+  responseType   String?  // text places recommendations weather
+  responseData   Json?
+  createdAt      DateTime @default(now())
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+}
+
+model Document {
+  id                 String   @id @default(uuid())
+  userId             String
+  filename           String
+  originalName       String
+  mimeType           String
+  size               Int
+  filePath           String
+  verificationStatus String   @default("pending")
+  uploadedAt         DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model SharedTrip {
+  id          String   @id @default(uuid())
+  tripId      String
+  createdBy   String
+  shareId     String   @unique
+  expiresAt   DateTime?
+  viewCount   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  user User @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  
+  @@index([shareId])
+}
+
+model TripCollaborator {
+  id            String   @id @default(uuid())
+  tripId        String
+  userId        String?
+  invitedEmail  String
+  role          String   @default("viewer")
+  inviteStatus  String   @default("pending")
+  joinedAt      DateTime?
+  createdAt     DateTime @default(now())
+  
+  trip Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model Vote {
+  id         String   @id @default(uuid())
+  tripId     String
+  userId     String
+  activityId String
+  voteValue  Int      @default(0)
+  createdAt  DateTime @default(now())
+  
+  trip     Trip          @relation(fields: [tripId], references: [id])
+  user     User          @relation(fields: [userId], references: [id])
+  activity ItineraryItem @relation(fields: [activityId], references: [id])
+  
+  @@unique([tripId, userId, activityId])
+}
+
+model CreatorGuide {
+  id               String   @id @default(uuid())
+  userId           String
+  tripId           String?
+  title            String
+  description      String?
+  coverImage       String?
+  tags             String[] @default([])
+  cloneCount       Int      @default(0)
+  viewCount        Int      @default(0)
+  affiliateRevenue Float    @default(0)
+  status           String   @default("published")
+  publishedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  
+  user User  @relation(fields: [userId], references: [id])
+  trip Trip? @relation(fields: [tripId], references: [id])
+}
+
+model CatalogItem {
+  id           String @id @default(uuid())
+  city         String
+  name         String
+  type         String
+  description  String?
+  imageUrl     String?
+  price        Float  @default(0)
+  duration     String?
+  rating       Float  @default(0)
+  instaScore   Int    @default(0)
+  photoTip     String?
+  latitude     Float?
+  longitude    Float?
+  
+  @@index([city])
+}
+
+model NewSpot {
+  id           String  @id @default(uuid())
+  name         String
+  country      String
+  city         String
+  imageUrl     String?
+  instaScore   Int     @default(0)
+  isTrending   Boolean @default(false)
+  photoTip     String?
+  shootingTime String?
+  composition  String?
+  scoreBreakdown Json?
+  price        Float   @default(0)
+  duration     String  @default("2 hours")
+}
