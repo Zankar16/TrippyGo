@@ -16,6 +16,7 @@ model User {
   travelDna    Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
   
   trips              Trip[]
   conversations      Conversation[]
@@ -24,6 +25,36 @@ model User {
   collaborations     TripCollaborator[]
   votes              Vote[]
   creatorGuides      CreatorGuide[]
+  sessions           Session[]
+  passwordResets     PasswordReset[]
+  expenses           Expense[]
+  notifications      Notification[]
+  notificationPrefs  NotificationPreference?
+  systemLogs         SystemLog[]
+  exportLogs         ExportLog[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Trip {
@@ -39,12 +70,16 @@ model Trip {
   status      String   @default("active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
   
   user             User               @relation(fields: [userId], references: [id])
   days             ItineraryDay[]
   collaborators    TripCollaborator[]
   votes            Vote[]
   creatorGuides    CreatorGuide[]
+  expenses         Expense[]
+  weatherAlerts    WeatherAlert[]
+  exportLogs       ExportLog[]
   
   @@index([userId])
 }
@@ -57,8 +92,9 @@ model ItineraryDay {
   theme     String?
   createdAt DateTime @default(now())
   
-  trip      Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  items     ItineraryItem[]
+  trip          Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  items         ItineraryItem[]
+  weatherAlerts WeatherAlert[]
   
   @@index([tripId])
 }
@@ -84,10 +120,61 @@ model ItineraryItem {
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
   
-  day    ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
-  votes  Vote[]
+  day            ItineraryDay    @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  votes          Vote[]
+  budgetSuggests BudgetSuggestion[]
+  affiliateLinks AffiliateLink[]
   
+  @@index([dayId])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  tripId      String
+  userId      String
+  amount      Float
+  currency    String   @default("USD")
+  category    String   // flights, accommodation, meals, activities, misc
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId])
+}
+
+model BudgetSuggestion {
+  id              String   @id @default(uuid())
+  itineraryItemId String
+  message         String
+  savingsAmount   Float
+  accepted        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  
+  item ItineraryItem @relation(fields: [itineraryItemId], references: [id], onDelete: Cascade)
+
+  @@index([itineraryItemId])
+}
+
+model WeatherAlert {
+  id                  String   @id @default(uuid())
+  tripId              String
+  dayId               String
+  severity            String   // yellow, red
+  condition           String
+  message             String
+  suggestedActivityId String?
+  createdAt           DateTime @default(now())
+  
+  trip Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  day  ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
   @@index([dayId])
 }
 
@@ -98,6 +185,7 @@ model Conversation {
   thumbnail   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
   
   user      User      @relation(fields: [userId], references: [id])
   messages  Message[]
@@ -194,8 +282,38 @@ model CreatorGuide {
   publishedAt      DateTime @default(now())
   createdAt        DateTime @default(now())
   
-  user User  @relation(fields: [userId], references: [id])
-  trip Trip? @relation(fields: [tripId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  trip           Trip?           @relation(fields: [tripId], references: [id])
+  affiliateLinks AffiliateLink[]
+}
+
+model AffiliateLink {
+  id             String   @id @default(uuid())
+  guideId        String
+  itineraryItemId String
+  url            String
+  provider       String
+  createdAt      DateTime @default(now())
+  
+  guide CreatorGuide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  item  ItineraryItem @relation(fields: [itineraryItemId], references: [id], onDelete: Cascade)
+  commissions Commission[]
+
+  @@index([guideId])
+  @@index([itineraryItemId])
+}
+
+model Commission {
+  id              String   @id @default(uuid())
+  affiliateLinkId String
+  amount          Float
+  currency        String   @default("USD")
+  earnedAt        DateTime @default(now())
+  status          String   @default("pending") // pending, paid
+  
+  link AffiliateLink @relation(fields: [affiliateLinkId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateLinkId])
 }
 
 model CatalogItem {
@@ -212,6 +330,8 @@ model CatalogItem {
   photoTip     String?
   latitude     Float?
   longitude    Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   @@index([city])
 }
@@ -230,4 +350,59 @@ model NewSpot {
   scoreBreakdown Json?
   price        Float   @default(0)
   duration     String  @default("2 hours")
+  createdAt    DateTime @default(now())
+}
+
+model SystemLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  level        String   // info, error, warning
+  message      String
+  stackTrace   String?
+  endpoint     String?
+  statusCode   Int?
+  responseTime Int?     // ms
+  createdAt    DateTime @default(now())
+  
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String   // trip_invite, collaborator_join, weather_alert, trip_shared, guide_published
+  message       String
+  isRead        Boolean  @default(false)
+  referenceId   String?  // tripId, activityId, etc.
+  referenceType String?
+  createdAt     DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  emailEnabled  Boolean  @default(true)
+  inAppEnabled  Boolean  @default(true)
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExportLog {
+  id         String   @id @default(uuid())
+  tripId     String
+  userId     String
+  format     String   // pdf, link
+  createdAt  DateTime @default(now())
+  
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId])
 }
