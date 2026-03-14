@@ -4,6 +4,7 @@ import { closeModal } from '../store/uiSlice';
 import { X } from 'lucide-react';
 import CustomiseTripModal from './modals/CustomiseTripModal';
 import AddActivityModal from './modals/AddActivityModal';
+import AddExpenseModal from './modals/AddExpenseModal';
 // import InviteTripmatesModal from './modals/InviteTripmatesModal';
 // ... etc
 
@@ -26,6 +27,8 @@ const ModalContainer = () => {
         return <CustomiseTripModal data={modalData} onClose={handleClose} />;
       case 'addActivity':
         return <AddActivityModal data={modalData} onClose={handleClose} />;
+      case 'addExpense':
+        return <AddExpenseModal data={modalData} onClose={handleClose} />;
       // case 'inviteTripmates':
       //   return <InviteTripmatesModal data={modalData} onClose={handleClose} />;
       default:

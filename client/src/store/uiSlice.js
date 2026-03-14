@@ -6,6 +6,7 @@ const uiSlice = createSlice({
     modals: {
       customiseTrip: false,
       addActivity: false,
+      addExpense: false,
       inviteTripmates: false,
       documentPreview: null, // Stores document object when open
       publishGuide: false,
