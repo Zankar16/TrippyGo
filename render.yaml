@@ -1,5 +1,5 @@
 services:
-  # Backend API (Express + Prisma)
+  # Backend API
   - type: web
     name: trippygo-server
     env: node
@@ -21,9 +21,10 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
 
-  # Frontend (Vite + React)
-  - type: static
+  # Frontend
+  - type: web
     name: trippygo-client
+    env: static
     rootDir: client
     buildCommand: npm install && npm run build
     staticPublishPath: dist
