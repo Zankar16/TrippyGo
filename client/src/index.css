@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------ */
+/* Base Styles */
+/* ------------------ */
+
+body {
+  @apply bg-theme-cream text-theme-forest antialiased;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* Headings */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  @apply font-semibold tracking-tight;
+}
+
+/* Small Label */
+
+.label-small {
+  @apply font-medium uppercase tracking-wider text-[10px] text-theme-sage;
+}
+
+/* Text Selection */
+
+::selection {
+  @apply bg-theme-sage text-white;
+}
+
+
+/* ------------------ */
+/* Components */
+/* ------------------ */
+
+@layer components {
+
+  /* Glass Card */
+
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-sm border border-neutral-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300;
+  }
+
+  /* Primary Button */
+
+  .btn-primary {
+    @apply px-5 py-2.5 bg-theme-forest hover:bg-theme-sage text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200 active:scale-95;
+  }
+
+  /* Secondary Button */
+
+  .btn-secondary {
+    @apply px-5 py-2.5 bg-theme-sand hover:bg-theme-lightSage text-theme-forest font-semibold rounded-xl transition-all duration-200;
+  }
+
+  /* Input */
+
+  .input-modern {
+    @apply w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-theme-sage focus:border-transparent transition-all;
+  }
+
+}
+
+
+/* ------------------ */
+/* Scrollbar */
+/* ------------------ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-theme-sand rounded-full hover:bg-theme-sage;
+}
+
+/* Thin scrollbar utility */
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}

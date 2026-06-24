@@ -1,0 +1,41 @@
+services:
+  # Backend Web Service running Express and Prisma
+  - type: web
+    name: trippygo-server
+    env: node
+    plan: free
+    buildCommand: npm install && npx prisma generate
+    releaseCommand: npx prisma db push
+    startCommand: npm run start
+    rootDir: server
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trippygo-db
+          property: connectionString
+      - key: OPENROUTER_API_KEY
+        sync: false
+
+  # Frontend Static Site running Vite React
+  - type: web
+    name: trippygo-client
+    env: static
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    rootDir: client
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: trippygo-server
+          type: web
+          property: host
+
+databases:
+  - name: trippygo-db
+    plan: free
