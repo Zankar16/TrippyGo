@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npx prisma generate
-    releaseCommand: npx prisma db push
+    preDeployCommand: npx prisma db push
     startCommand: npm run start
     rootDir: server
     envVars:
@@ -27,7 +27,7 @@ services:
     name: trippygo-client
     env: static
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: ./dist
     rootDir: client
     envVars:
       - key: VITE_API_URL
